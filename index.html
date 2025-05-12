@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>เกมไรไม่รู้แต่คนสร้างเก่ง</title>
   <style>
     body {
@@ -40,16 +41,33 @@
     #restartButton:hover {
       background-color: #ff9900;
     }
+    #startButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      background-color: #ffcc00;
+      border: none;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 100;
+    }
+    #startButton:hover {
+      background-color: #ff9900;
+    }
   </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
+<canvas id="gameCanvas"></canvas>
 <div id="gameOverDialog">
   <p id="gameOverText">จบเกม!</p>
   <p id="scoreDisplay">คะแนน: 0</p>
   <p id="highScoreDisplay">คะแนนสูงสุด: 0</p>
   <button id="restartButton">เริ่มใหม่</button>
 </div>
+<button id="startButton">เริ่มเล่น</button>
 
 <script>
   const canvas = document.getElementById('gameCanvas');
@@ -58,14 +76,19 @@
   const restartButton = document.getElementById('restartButton');
   const scoreDisplay = document.getElementById('scoreDisplay');
   const highScoreDisplay = document.getElementById('highScoreDisplay');
+  const startButton = document.getElementById('startButton');
+
+  // ปรับขนาดแคนนวาสตามขนาดหน้าจอ
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
   const bird = {
     x: 50,
     y: 150,
     width: 30,
     height: 30,
-    gravity: 0.5,
-    lift: -9,
+    gravity: 0.6,
+    lift: -10,
     velocity: 0
   };
 
@@ -168,16 +191,29 @@
     gameOverDialog.style.display = 'block';
   }
 
-  document.addEventListener('keydown', () => {
+  // ปรับให้รองรับการสัมผัส
+  function handleTouch(event) {
     if (!gameOver) {
       bird.velocity = bird.lift;
       jumpSound.play();
     }
-  });
+  }
 
+  // ฟังก์ชันเริ่มเล่น
+  function startGame() {
+    startButton.style.display = 'none'; // ซ่อนปุ่มเริ่มเล่น
+    update(); // เริ่มเกม
+  }
+
+  // ตั้งค่าให้ใช้การสัมผัสบนมือถือ
+  canvas.addEventListener('touchstart', handleTouch);
+
+  // ปุ่มเริ่มเกม
+  startButton.addEventListener('click', startGame);
+
+  // ปุ่มเริ่มใหม่
   restartButton.addEventListener('click', resetGame);
 
-  update();
 </script>
 </body>
 </html>
