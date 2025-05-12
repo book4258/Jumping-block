@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>เกมไรไม่รู้แต่คนสร้างเก่ง</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #70c5ce;
+      font-family: 'Kanit', sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background-color: #70c5ce;
+      border: 2px solid #000;
+    }
+    #gameOverDialog {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: white;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+    #restartButton {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #ffcc00;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #restartButton:hover {
+      background-color: #ff9900;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<div id="gameOverDialog">
+  <p id="gameOverText">จบเกม!</p>
+  <p id="scoreDisplay">คะแนน: 0</p>
+  <p id="highScoreDisplay">คะแนนสูงสุด: 0</p>
+  <button id="restartButton">เริ่มใหม่</button>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const gameOverDialog = document.getElementById('gameOverDialog');
+  const restartButton = document.getElementById('restartButton');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const highScoreDisplay = document.getElementById('highScoreDisplay');
+
+  const bird = {
+    x: 50,
+    y: 150,
+    width: 30,
+    height: 30,
+    gravity: 0.5,
+    lift: -9,
+    velocity: 0
+  };
+
+  const pipeWidth = 60;
+  const pipeGap = 150;
+  let pipes = [];
+  let score = 0;
+  let highScore = localStorage.getItem('highScoreTH') ? parseInt(localStorage.getItem('highScoreTH')) : 0;
+  let gameOver = false;
+  let frame = 0;
+
+  const jumpSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+  const crashSound = new Audio('https://www.soundjay.com/button/beep-02.wav');
+
+  function drawBird() {
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+  }
+
+  function drawPipe(pipe) {
+    ctx.fillStyle = 'green';
+    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+    ctx.fillRect(pipe.x, pipe.top + pipeGap, pipeWidth, canvas.height - pipe.top - pipeGap);
+  }
+
+  function drawScore() {
+    ctx.fillStyle = 'white';
+    ctx.font = '22px Arial';
+    ctx.fillText('คะแนน: ' + score, 10, 30);
+    ctx.fillText('สูงสุด: ' + highScore, 10, 60);
+  }
+
+  function resetGame() {
+    bird.y = 150;
+    bird.velocity = 0;
+    pipes = [];
+    score = 0;
+    gameOver = false;
+    frame = 0;
+    gameOverDialog.style.display = 'none';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    requestAnimationFrame(update);
+  }
+
+  function update() {
+    if (gameOver) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    bird.velocity += bird.gravity;
+    bird.y += bird.velocity;
+
+    if (bird.y + bird.height > canvas.height || bird.y < 0) {
+      endGame();
+      return;
+    }
+
+    if (frame % 90 === 0) {
+      let top = Math.random() * (canvas.height - pipeGap - 100) + 20;
+      pipes.push({ x: canvas.width, top });
+    }
+
+    for (let i = 0; i < pipes.length; i++) {
+      let pipe = pipes[i];
+      pipe.x -= 2;
+
+      if (
+        bird.x < pipe.x + pipeWidth &&
+        bird.x + bird.width > pipe.x &&
+        (bird.y < pipe.top || bird.y + bird.height > pipe.top + pipeGap)
+      ) {
+        endGame();
+        return;
+      }
+
+      if (pipe.x + pipeWidth < bird.x && !pipe.passed) {
+        pipe.passed = true;
+        score++;
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('highScoreTH', highScore);
+        }
+      }
+
+      drawPipe(pipe);
+    }
+
+    drawBird();
+    drawScore();
+    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+    frame++;
+    requestAnimationFrame(update);
+  }
+
+  function endGame() {
+    gameOver = true;
+    crashSound.play();
+    scoreDisplay.textContent = 'คะแนน: ' + score;
+    highScoreDisplay.textContent = 'คะแนนสูงสุด: ' + highScore;
+    gameOverDialog.style.display = 'block';
+  }
+
+  document.addEventListener('keydown', () => {
+    if (!gameOver) {
+      bird.velocity = bird.lift;
+      jumpSound.play();
+    }
+  });
+
+  restartButton.addEventListener('click', resetGame);
+
+  update();
+</script>
+</body>
+</html>
